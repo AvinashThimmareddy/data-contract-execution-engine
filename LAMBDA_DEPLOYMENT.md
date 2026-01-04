@@ -13,6 +13,32 @@ Simple guide to deploy the Data Contract Execution Engine to AWS Lambda.
 
 ### 1. Create Deployment Package
 
+**On Windows (PowerShell) - Recommended:**
+```powershell
+# Clone repository
+git clone https://github.com/<your-username>/data-contract-execution-engine.git
+cd data-contract-execution-engine
+
+# Create deployment package
+Remove-Item lambda_build -Recurse -Force -ErrorAction SilentlyContinue
+mkdir lambda_build
+
+# Copy code and config
+Copy-Item -Path engine -Destination lambda_build -Recurse
+Copy-Item -Path runtime -Destination lambda_build -Recurse
+Copy-Item -Path contracts -Destination lambda_build -Recurse
+
+# Install PyYAML to lambda_build (required for contract parsing)
+pip install PyYAML -t lambda_build
+
+# Create ZIP
+Compress-Archive -Path lambda_build/* -DestinationPath lambda_function.zip -Force
+
+# Verify size (should be small, < 5MB)
+$size = (Get-Item lambda_function.zip).Length / 1MB
+Write-Host "Package size: $size MB"
+```
+
 **On Mac/Linux:**
 ```bash
 # Clone repository
@@ -24,7 +50,9 @@ mkdir lambda_build
 cp -r engine/ lambda_build/
 cp -r runtime/ lambda_build/
 cp -r contracts/ lambda_build/
-cp requirements.txt lambda_build/
+
+# Install PyYAML to lambda_build
+pip install PyYAML -t lambda_build
 
 # Create ZIP
 cd lambda_build
@@ -32,24 +60,47 @@ zip -r ../lambda_function.zip .
 cd ..
 ```
 
-**On Windows (PowerShell):**
-```powershell
-# Clone repository
-git clone https://github.com/<your-username>/data-contract-execution-engine.git
-cd data-contract-execution-engine
+### Why PyYAML in ZIP?
+- **PyYAML** is small (~1MB) and needed to parse YAML contracts
+- **pandas** & **boto3** come from Lambda Layer (see Step 2)
+- Keeps deployment package lightweight and fast
 
-# Create deployment package
-mkdir lambda_build
-Copy-Item -Path engine -Destination lambda_build -Recurse
-Copy-Item -Path runtime -Destination lambda_build -Recurse
-Copy-Item -Path contracts -Destination lambda_build -Recurse
-Copy-Item -Path requirements.txt -Destination lambda_build
+### 2. Add Lambda Layer (AWSSDKPandas-Python311)
 
-# Create ZIP (no installation needed)
-Compress-Archive -Path lambda_build/* -DestinationPath lambda_function.zip -Force
+The AWSSDKPandas-Python311 layer provides critical dependencies that are too large to bundle in the deployment package.
+
+**What's in the layer:**
+- ✅ **pandas** - Data processing and validation
+- ✅ **boto3** - AWS S3 integration
+- ✅ Other AWS SDK dependencies
+
+**Why use a layer instead of including in ZIP:**
+- Keeps function package small (< 10MB vs 100+ MB)
+- Faster deployments and cold starts
+- Easy to update without redeploying code
+- Shared across multiple Lambda functions
+
+**Add the layer via AWS Console:**
+
+1. Go to [Lambda Console](https://console.aws.amazon.com/lambda/home#/functions)
+2. Click your function: `data-contract-executor`
+3. Scroll down to **Layers** section
+4. Click **Add a layer**
+5. Choose **AWS Layers**
+6. In the dropdown, search for: `AWSSDKPandas-python311`
+7. Select it (choose Version 1 or latest)
+8. Click **Add** ✅
+
+**Or via AWS CLI:**
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+aws lambda update-function-configuration \
+  --function-name data-contract-executor \
+  --layers arn:aws:lambda:us-east-1:${ACCOUNT_ID}:layer:AWSSDKPandas-Python311
 ```
 
-### 2. Create IAM Role
+### 3. Create IAM Role
 
 ```bash
 # Create trust policy
@@ -93,7 +144,7 @@ aws iam attach-role-policy \
   --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 ```
 
-### 3. Create Lambda Function
+### 4. Create Lambda Function
 
 ```bash
 # Get your AWS Account ID
@@ -111,7 +162,7 @@ aws lambda create-function \
   --description "Data Contract Execution Engine"
 ```
 
-### 4. Test the Function
+### 5. Test the Function
 
 Create test event (`test_event.json`):
 ```json
