@@ -1,0 +1,5 @@
+{
+  "contract_path": "contracts/sample_contract.yaml",
+  "source_path": "s3://dcce-s3-bucket/input/customers.csv",
+  "target_path": "s3://dcce-s3-bucket/output/customers_validated.csv"
+}

@@ -1,0 +1,38 @@
+name: "Customer Data Contract"
+version: "1.0"
+
+# S3 paths for data
+source_s3_path: "s3://dcce-s3-bucket/input/customers.csv"
+target_s3_path: "s3://dcce-s3-bucket/output/customers_validated.csv"
+
+# Schema definition
+schema:
+  columns:
+    customer_id:
+      type: "integer"
+      nullable: false
+    name:
+      type: "string"
+      nullable: false
+    email:
+      type: "string"
+      nullable: true
+    age:
+      type: "integer"
+      nullable: true
+    created_at:
+      type: "timestamp"
+      nullable: false
+
+# SLA rules
+sla:
+  min_rows: 1
+  max_rows: 1000000
+  completeness_threshold: 0.90
+
+# Transformations (optional)
+transformations:
+  - type: "uppercase"
+    column: "name"
+  - type: "trim"
+    column: "email"

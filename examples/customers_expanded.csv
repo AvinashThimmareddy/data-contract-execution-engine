@@ -1,0 +1,11 @@
+customer_id,name,email,age,created_at
+C001,John Smith,john.smith@company.com,32,2024-01-15
+C002,Sarah Johnson,sarah.johnson@company.com,28,2024-01-16
+C003,Michael Chen,michael.chen@company.com,45,2024-01-17
+C004,Emma Williams,,35,2024-01-18
+C005,Robert Martinez,robert.martinez@company.com,52,2024-01-19
+C006,Lisa Anderson,,29,2024-01-20
+C007,David Brown,david.brown@company.com,41,2024-01-21
+C008,Jessica Garcia,jessica.garcia@company.com,38,2024-01-22
+C009,James Wilson,,50,2024-01-23
+C010,Amanda Taylor,amanda.taylor@company.com,26,2024-01-24

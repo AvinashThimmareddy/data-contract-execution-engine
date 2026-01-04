@@ -1,0 +1,5 @@
+{
+  "contract_path": "contracts/sample_contract.yaml",
+  "source_path": "examples/customers_expanded.csv",
+  "target_path": "output/customers_validated.csv"
+}
