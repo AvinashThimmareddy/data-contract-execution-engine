@@ -58,6 +58,14 @@ pip install -r requirements.txt
 
 ## Quick Start
 
+Get started in 5 minutes! See [QUICKSTART.md](QUICKSTART.md) for detailed instructions including:
+- Local testing with sample data
+- Testing with local file paths
+- Deploying to AWS Lambda
+- Running tests with coverage
+
+Quick example:
+
 ### 1. Create a Contract
 
 Define a YAML contract file (`contracts/sample_contract.yaml`):
@@ -109,15 +117,7 @@ print(f"Validation passed: {results['success']}")
 
 ### 3. Deploy to AWS Lambda
 
-Update the Lambda handler event:
-
-```json
-{
-  "contract_path": "contracts/sample_contract.yaml",
-  "source_s3_path": "s3://my-bucket/input/customers.csv",
-  "target_s3_path": "s3://my-bucket/output/customers_validated.csv"
-}
-```
+See [LAMBDA_DEPLOYMENT.md](LAMBDA_DEPLOYMENT.md) for complete step-by-step deployment instructions.
 
 ---
 
@@ -153,7 +153,13 @@ Update the Lambda handler event:
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup and coding standards
+- How to implement new features
+- Testing requirements
+- Planned enhancements (multi-format file support, custom transformations, etc.)
+
+Quick steps:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
