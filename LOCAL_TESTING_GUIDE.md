@@ -1,22 +1,12 @@
 # Local Testing & Windows Deployment Guide
 
-## Summary of Changes
+The engine now supports local file paths for testing before Lambda deployment, and includes Windows-specific instructions for packaging and deployment.
 
-This update enables the Data Contract Execution Engine to support **local file paths** for testing before Lambda deployment, and provides **Windows-specific deployment instructions**.
+## Lambda Handler with Local File Support
 
-## 1. ✅ Enhanced Lambda Handler with Local File Support
+The handler can work with both local and S3 paths. It detects S3 paths by checking for the `s3://` prefix and handles I/O appropriately.
 
-**File**: `runtime/lambda_handler.py`
-
-**Key Changes**:
-- Added `_is_s3_path()` helper to detect S3 vs local paths
-- Added `_read_csv()` function that handles both S3 and local CSV files
-- Added `_write_csv()` function that handles both S3 and local CSV files
-- Auto-creates output directories for local paths
-- Updated handler docstring with examples for both S3 and local testing
-- Changed parameter names from `source_s3_path`/`target_s3_path` to `source_path`/`target_path` (more generic)
-
-**Now Supports**:
+**Supported paths**:
 ```python
 # S3 paths (Lambda deployment)
 {
@@ -40,17 +30,11 @@ This update enables the Data Contract Execution Engine to support **local file p
 }
 ```
 
-## 2. ✅ Enhanced Sample Data
+## Sample Data
 
-**File**: `examples/customers_expanded.csv` (NEW)
+The test data includes 10 customer records with some missing email values for testing completeness rules:
 
-**Details**:
-- 10 customer records (expanded from 5)
-- Includes missing values for testing completeness SLA rules
-- Covers various ages for data diversity
-- Ready for local testing
-
-**Records**:
+**Data**:
 ```
 customer_id,name,email,age
 C001,John Smith,john.smith@company.com,32
@@ -65,11 +49,9 @@ C009,James Wilson,,50            <- missing email
 C010,Amanda Taylor,amanda.taylor@company.com,26
 ```
 
-## 3. ✅ Windows Deployment Instructions
+## Windows Deployment
 
-**File**: `LAMBDA_DEPLOYMENT.md`
-
-**Windows Users**: Use PowerShell's native `Compress-Archive` (no installation needed):
+On Windows, you can use PowerShell's native `Compress-Archive` cmdlet to create the deployment package without needing external tools:
 
 ```powershell
 # Create deployment package
@@ -83,11 +65,9 @@ Copy-Item -Path requirements.txt -Destination lambda_build
 Compress-Archive -Path lambda_build/* -DestinationPath lambda_function.zip -Force
 ```
 
-## 4. ✅ Updated QUICKSTART.md with Local Testing Workflow
+## Updated Documentation
 
-**File**: `QUICKSTART.md`
-
-**New Section**: "Test with Local Files (Before Lambda Deployment)"
+The QUICKSTART guide includes a new section for local testing before deployment:
 
 **Workflow**:
 1. Create output directory: `mkdir output`
@@ -111,13 +91,11 @@ print(result)
 "
 ```
 
-## 5. ✅ Updated Lambda Event Examples
+## Lambda Event Examples
 
-**Files Modified**:
-- `examples/lambda_event.json` - Updated to use `source_path`/`target_path`
-- `examples/lambda_event_local.json` (NEW) - Local testing example
+Lambda event files have been updated to use the new `source_path` and `target_path` parameters.
 
-**Local Testing Example**:
+**Local testing example**:
 ```json
 {
   "contract_path": "contracts/sample_contract.yaml",
@@ -126,11 +104,9 @@ print(result)
 }
 ```
 
-## 6. ✅ Output Directory
+## Output Directory
 
-**Directory Created**: `output/` 
-- For storing locally-validated data
-- Added to .gitignore (recommended)
+An `output/` directory is used for storing locally-validated data.
 
 ---
 
@@ -177,11 +153,11 @@ Expected completeness: 8/10 * 100 = 80% (less than 95% threshold if set)
 
 ## Breaking Changes
 
-⚠️ **Parameter Names Changed** (If using Lambda API directly):
+If you were using the Lambda API directly, the parameter names have changed:
 - Old: `source_s3_path` → New: `source_path`
 - Old: `target_s3_path` → New: `target_path`
 
-Update Lambda test events:
+Update Lambda test events accordingly:
 ```json
 // OLD (no longer works)
 {
@@ -202,22 +178,21 @@ Update Lambda test events:
 
 ## Key Benefits
 
-✅ **Dual I/O Support**: Test locally, deploy to S3 without code changes
-✅ **Windows-Friendly**: PowerShell `Compress-Archive` (no extra tools needed)
-✅ **Better Documentation**: Clear examples for both local and Lambda deployments
-✅ **Enhanced Sample Data**: 10 records with realistic edge cases
-✅ **Backward Compatible**: Lambda still works the same way, just more flexible paths
+- **Dual I/O Support**: Test locally, deploy to S3 without code changes
+- **Windows-Friendly**: PowerShell `Compress-Archive` (no extra tools needed)
+- **Better Documentation**: Clear examples for both local and Lambda deployments
+- **Enhanced Sample Data**: 10 records with realistic edge cases
 
 ---
 
 ## Next Steps
 
-1. **Test Locally**:
+1. **Test locally**:
    ```bash
    python -c "from runtime.lambda_handler import handler; print(handler({'contract_path': 'contracts/sample_contract.yaml', 'source_path': 'examples/customers_expanded.csv', 'target_path': 'output/customers_validated.csv'}, None))"
    ```
 
-2. **Verify Output**:
+2. **Check the output**:
    ```bash
    cat output/customers_validated.csv
    ```
@@ -227,8 +202,6 @@ Update Lambda test events:
    Compress-Archive -Path lambda_build/* -DestinationPath lambda_function.zip -Force
    ```
 
-4. **Test in AWS** using the updated `lambda_event.json` with S3 paths
+4. **Test in AWS** using `lambda_event.json` with S3 paths
 
----
-
-**Documentation**: See [LAMBDA_DEPLOYMENT.md](LAMBDA_DEPLOYMENT.md) and [QUICKSTART.md](QUICKSTART.md) for complete deployment instructions.
+For more details, see [LAMBDA_DEPLOYMENT.md](LAMBDA_DEPLOYMENT.md) and [QUICKSTART.md](QUICKSTART.md).

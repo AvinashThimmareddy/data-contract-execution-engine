@@ -1,13 +1,13 @@
 # Quick Start Guide
 
-Get up and running with Data Contract Execution Engine in 5 minutes!
+Get up and running with the Data Contract Execution Engine.
 
 ## Prerequisites
 - Python 3.7+
 - pip
 - AWS Account (for Lambda deployment)
 
-## 1. Installation (1 minute)
+## 1. Installation
 
 ```bash
 # Clone the repository
@@ -18,7 +18,7 @@ cd data-contract-execution-engine
 pip install -r requirements.txt
 ```
 
-## 2. Define Your Contract (1 minute)
+## 2. Define Your Contract
 
 Create or edit `contracts/my_contract.yaml`:
 
@@ -48,7 +48,7 @@ sla:
   completeness_threshold: 0.95
 ```
 
-## 3. Test Locally (1 minute)
+## 3. Test Locally
 
 Run the test suite to verify everything works:
 
@@ -68,7 +68,7 @@ tests/test_sla_enforcer.py::test_enforce_sla PASSED
 tests/test_pipeline_generator.py::test_generate_pipeline PASSED
 tests/test_lambda_handler.py::test_handler PASSED
 
-======================== 18+ tests passed ✅ ========================
+======================== 18+ tests passed ========================
 ```
 
 Or test manually with sample data:
@@ -84,14 +84,14 @@ contract = load_contract('contracts/sample_contract.yaml')
 df = pd.read_csv('examples/customers_expanded.csv')
 pipeline = PipelineGenerator(contract)
 results = pipeline.generate(df)
-print('✅ Validation Success!' if results.get('success') else '❌ Validation Failed')
+print('Validation Success!' if results.get('success') else 'Validation Failed')
 print(results)
 "
 ```
 
-## 4. Test with Local Files (Before Lambda Deployment)
+## 4. Test with Local Files
 
-The engine supports **both local file paths and S3 paths**. Perfect for pre-deployment testing:
+The engine supports both local file paths and S3 paths. This is useful for testing before deploying to Lambda.
 
 **Step 1: Create output directory**
 ```bash
@@ -138,7 +138,7 @@ You can mix local and S3 paths:
 }
 ```
 
-## 5. Deploy to Lambda (2 minutes)
+## 5. Deploy to Lambda
 
 For detailed Lambda deployment instructions, see [LAMBDA_DEPLOYMENT.md](LAMBDA_DEPLOYMENT.md).
 
@@ -264,39 +264,29 @@ data-contract-execution-engine/
 
 ## Next Steps
 
-- Read full [README.md](README.md)
+- Read the full [README.md](README.md)
 - Explore [CONTRIBUTING.md](CONTRIBUTING.md)
-- Check [examples/](examples/) for more samples
-- Set up tests: `pytest tests/ -v`
-- Better performance on large datasets (>100MB)
-- Auto-scaling
-- Advanced monitoring
-- ~$0.44 per DPU-hour
+- Check [examples/](examples/) for sample configurations
+- Run tests with coverage: `pytest tests/ --cov=engine --cov=runtime`
 
 ## Security Best Practices
 
-1. **Use IAM Roles**: Never store AWS credentials in code
-2. **S3 Encryption**: Enable encryption for sensitive data
-3. **Contract Validation**: Validate contracts before deployment
-4. **Logging**: Review CloudWatch logs for security issues
-5. **Least Privilege**: Grant minimum required permissions
+1. Use IAM Roles - Never store AWS credentials in code
+2. S3 Encryption - Enable encryption for sensitive data
+3. Contract Validation - Validate contracts before deployment
+4. Logging - Review CloudWatch logs for security issues
+5. Least Privilege - Grant minimum required permissions
 
 ## Performance Tips
 
-### For Lambda (< 100MB data)
-- ✅ Keep memory at 3GB minimum
-- ✅ Use CSV format
-- ✅ Simple transformations
-- ✅ Set timeout to 15 minutes
+For Lambda with data under 100MB:
+- Set Lambda memory to at least 3GB
+- Use CSV format
+- Keep transformations simple
+- Set timeout to 15 minutes
 
-### For Glue (> 100MB data)
-- ✅ Use Parquet format
-- ✅ Parallel processing
-- ✅ Auto-scaling workers
-- ✅ Better for batch jobs
+For larger datasets over 100MB, consider AWS Glue with Parquet format and auto-scaling workers.
 
 ---
 
-**Happy data processing!** 🚀
-
-Questions? See our documentation or open an issue on GitHub.
+Questions? Check the documentation or open an issue on GitHub.

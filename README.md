@@ -17,25 +17,25 @@ The engine validates data on ingestion to ensure quality and consistency before 
 
 ## Key Features
 
-- **Simple Python implementation** - No heavy dependencies, easy to understand
-- **YAML-based contracts** - Define schemas and SLA rules declaratively
-- **Data quality validation** - Schema, constraints, and SLA checks
-- **AWS Lambda ready** - Deploy as a Lambda function for serverless validation
-- **S3 integration** - Read from and write to S3 effortlessly
-- **Pandas-based processing** - Uses pandas for lightweight data manipulation
+- Simple Python implementation without heavy dependencies
+- YAML-based contract definitions for schemas and SLA rules
+- Data quality validation including schema checks and SLA enforcement
+- AWS Lambda deployment for serverless processing
+- S3 integration for reading and writing data
+- Pandas-based data manipulation
 
 ---
 
-## Current Limitations
+## Limitations
 
-- **CSV files only** - Currently supports CSV format only
+- **CSV files only** - Currently supports CSV format
   - No support for TXT files with custom delimiters (tab, pipe, space, etc.)
   - No support for other formats (JSON, Parquet, Excel, etc.)
-  - **Workaround**: See [CONTRIBUTING.md](CONTRIBUTING.md) for implementing multi-format support
+  - See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add multi-format support
 
-- **Single-machine processing** - Best for datasets < 1GB
+- **Single-machine processing** - Best for datasets under 1GB
   - Loads entire dataset into memory
-  - Not suitable for very large files (use Spark for distributed processing)
+  - For larger files, consider using Spark for distributed processing
 
 ---
 
@@ -58,13 +58,13 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-Get started in 5 minutes! See [QUICKSTART.md](QUICKSTART.md) for detailed instructions including:
+See [QUICKSTART.md](QUICKSTART.md) for detailed instructions including:
 - Local testing with sample data
 - Testing with local file paths
 - Deploying to AWS Lambda
 - Running tests with coverage
 
-Quick example:
+Basic example:
 
 ### 1. Create a Contract
 

@@ -9,89 +9,64 @@ Simple guide to deploy the Data Contract Execution Engine to AWS Lambda.
 - Python 3.7+
 - Git
 
-## Quick Start (5 minutes)
+## Quick Start
 
 ### 1. Create Deployment Package
 
-**On Windows (PowerShell) - Recommended:**
+**On Windows (PowerShell):**
 ```powershell
-# Clone repository
 git clone https://github.com/<your-username>/data-contract-execution-engine.git
 cd data-contract-execution-engine
 
-# Create deployment package
 Remove-Item lambda_build -Recurse -Force -ErrorAction SilentlyContinue
 mkdir lambda_build
 
-# Copy code and config
 Copy-Item -Path engine -Destination lambda_build -Recurse
 Copy-Item -Path runtime -Destination lambda_build -Recurse
 Copy-Item -Path contracts -Destination lambda_build -Recurse
 
-# Install PyYAML to lambda_build (required for contract parsing)
 pip install PyYAML -t lambda_build
 
-# Create ZIP
 Compress-Archive -Path lambda_build/* -DestinationPath lambda_function.zip -Force
 
-# Verify size (should be small, < 5MB)
 $size = (Get-Item lambda_function.zip).Length / 1MB
 Write-Host "Package size: $size MB"
 ```
 
 **On Mac/Linux:**
 ```bash
-# Clone repository
 git clone https://github.com/<your-username>/data-contract-execution-engine.git
 cd data-contract-execution-engine
 
-# Create deployment package
 mkdir lambda_build
 cp -r engine/ lambda_build/
 cp -r runtime/ lambda_build/
 cp -r contracts/ lambda_build/
 
-# Install PyYAML to lambda_build
 pip install PyYAML -t lambda_build
 
-# Create ZIP
 cd lambda_build
 zip -r ../lambda_function.zip .
 cd ..
 ```
 
-### Why PyYAML in ZIP?
-- **PyYAML** is small (~1MB) and needed to parse YAML contracts
-- **pandas** & **boto3** come from Lambda Layer (see Step 2)
-- Keeps deployment package lightweight and fast
+The deployment package includes PyYAML for parsing contracts. Other dependencies like pandas and boto3 come from a Lambda Layer.
 
 ### 2. Add Lambda Layer (AWSSDKPandas-Python311)
 
-The AWSSDKPandas-Python311 layer provides critical dependencies that are too large to bundle in the deployment package.
+The AWSSDKPandas layer provides pandas, boto3, and other dependencies. This keeps the deployment package small.
 
-**What's in the layer:**
-- ✅ **pandas** - Data processing and validation
-- ✅ **boto3** - AWS S3 integration
-- ✅ Other AWS SDK dependencies
-
-**Why use a layer instead of including in ZIP:**
-- Keeps function package small (< 10MB vs 100+ MB)
-- Faster deployments and cold starts
-- Easy to update without redeploying code
-- Shared across multiple Lambda functions
-
-**Add the layer via AWS Console:**
+**Via AWS Console:**
 
 1. Go to [Lambda Console](https://console.aws.amazon.com/lambda/home#/functions)
 2. Click your function: `data-contract-executor`
-3. Scroll down to **Layers** section
+3. Scroll to **Layers** section
 4. Click **Add a layer**
 5. Choose **AWS Layers**
-6. In the dropdown, search for: `AWSSDKPandas-python311`
-7. Select it (choose Version 1 or latest)
-8. Click **Add** ✅
+6. Search for: `AWSSDKPandas-python311`
+7. Select it and click **Add**
 
-**Or via AWS CLI:**
+**Via AWS CLI:**
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
@@ -147,10 +122,8 @@ aws iam attach-role-policy \
 ### 4. Create Lambda Function
 
 ```bash
-# Get your AWS Account ID
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
-# Create function
 aws lambda create-function \
   --function-name data-contract-executor \
   --runtime python3.11 \
@@ -164,12 +137,12 @@ aws lambda create-function \
 
 ### 5. Test the Function
 
-Create test event (`test_event.json`):
+Create a test event:
 ```json
 {
   "contract_path": "contracts/sample_contract.yaml",
-  "source_s3_path": "s3://my-bucket/input/data.csv",
-  "target_s3_path": "s3://my-bucket/output/data_validated.csv"
+  "source_path": "s3://my-bucket/input/data.csv",
+  "target_path": "s3://my-bucket/output/data_validated.csv"
 }
 ```
 
@@ -183,30 +156,29 @@ aws lambda invoke \
 cat response.json
 ```
 
-## Function Input Format
+## Function Input
 
-The function accepts two input patterns:
-
-**Pattern 1: With S3 paths in event**
+The function accepts this input format:
 ```json
 {
   "contract_path": "contracts/my_contract.yaml",
-  "source_s3_path": "s3://bucket/input/data.csv",
-  "target_s3_path": "s3://bucket/output/data.csv"
+  "source_path": "s3://bucket/input/data.csv",
+  "target_path": "s3://bucket/output/data.csv"
 }
 ```
 
-**Pattern 2: Using contract S3 paths**
+You can also use local paths for testing:
 ```json
 {
-  "contract_path": "contracts/my_contract.yaml"
+  "contract_path": "contracts/my_contract.yaml",
+  "source_path": "examples/sample_data.csv",
+  "target_path": "output/results.csv"
 }
 ```
-(Contract must contain `source_s3_path` and `target_s3_path`)
 
 ## Function Output
 
-### Success Response
+**Success:**
 ```json
 {
   "statusCode": 200,
@@ -216,8 +188,7 @@ The function accepts two input patterns:
     "input_rows": 100,
     "output_rows": 100,
     "pipeline_results": {
-      "success": true,
-      "steps": [...]
+      "success": true
     }
   }
 }
@@ -235,12 +206,12 @@ The function accepts two input patterns:
 
 ## Configuration
 
-### Memory & Timeout
-- **Memory**: 256MB (default, suitable for < 500MB files)
-- **Timeout**: 30 seconds (adjust for larger datasets)
-- **Ephemeral Storage**: 512MB
+**Memory & Timeout**:
+- Memory: 256MB (suitable for < 500MB files)
+- Timeout: 30 seconds (increase for larger datasets)
+- Ephemeral Storage: 512MB
 
-Increase for larger datasets:
+To increase:
 ```bash
 aws lambda update-function-configuration \
   --function-name data-contract-executor \
@@ -248,24 +219,15 @@ aws lambda update-function-configuration \
   --timeout 60
 ```
 
-### Environment Variables (Optional)
-```bash
-aws lambda update-function-configuration \
-  --function-name data-contract-executor \
-  --environment Variables={LOG_LEVEL=INFO}
-```
-
 ## Updating the Function
 
-After making code changes:
+After code changes:
 
 ```bash
-# Rebuild package
 cd lambda_build
 zip -r ../lambda_function.zip .
 cd ..
 
-# Update function
 aws lambda update-function-code \
   --function-name data-contract-executor \
   --zip-file fileb://lambda_function.zip
@@ -273,20 +235,12 @@ aws lambda update-function-code \
 
 ## Monitoring
 
-### View Logs
+View logs:
 ```bash
-# Stream logs in real-time
 aws logs tail /aws/lambda/data-contract-executor --follow
-
-# Get specific invocation logs
-aws lambda invoke \
-  --function-name data-contract-executor \
-  --payload file://test_event.json \
-  --log-type Tail \
-  response.json
 ```
 
-### View Metrics
+View metrics:
 ```bash
 aws cloudwatch get-metric-statistics \
   --namespace AWS/Lambda \
@@ -300,21 +254,21 @@ aws cloudwatch get-metric-statistics \
 
 ## Troubleshooting
 
-### "No module named 'pandas'"
+**"No module named 'pandas'"**
 Include pandas in the deployment package:
 ```bash
 pip install pandas -t lambda_build/
 cd lambda_build && zip -r ../lambda_function.zip . && cd ..
 ```
 
-### "Access Denied" on S3
+**"Access Denied" on S3**
 - Verify IAM role has S3 permissions
-- Check S3 bucket name and path are correct
+- Check bucket name and path
 - Test: `aws s3 ls s3://your-bucket/`
 
-### "Timeout exceeded"
+**"Timeout exceeded"**
 - Dataset is too large
-- Increase timeout/memory or split data into smaller files
+- Increase timeout and memory:
 ```bash
 aws lambda update-function-configuration \
   --function-name data-contract-executor \
@@ -322,39 +276,36 @@ aws lambda update-function-configuration \
   --timeout 60
 ```
 
-### "OutOfMemory" errors
+**"OutOfMemory" errors**
 - Dataset exceeds Lambda memory
-- Increase memory allocation
-- Or process in smaller chunks
+- Increase memory allocation or process in smaller chunks
 
 ## Cost Estimation
 
 For 100 invocations/month:
-- **Lambda**: ~$0.20 (first 1M requests free)
-- **S3**: ~$0.023/GB transferred
-- **CloudWatch**: Usually free tier
+- Lambda: ~$0.20 (first 1M requests free)
+- S3: ~$0.023/GB transferred
+- CloudWatch: Usually free tier
 
-**Typical monthly cost: < $1** for light usage
+Typical monthly cost is under $1 for light usage.
 
 ## Best Practices
 
-1. **Keep datasets small**: Optimal < 500MB
-2. **Schedule with EventBridge**: For regular validation
-3. **Monitor logs**: Check CloudWatch regularly
-4. **Test locally first**: Use QUICKSTART.md examples
-5. **Version contracts**: Track contract changes
+1. Keep datasets under 500MB
+2. Schedule with EventBridge for regular validation
+3. Monitor CloudWatch logs regularly
+4. Test locally first using QUICKSTART.md examples
+5. Track contract changes with versioning
 
-## Advanced: Scheduled Execution
+## Scheduled Execution
 
-Run validation on schedule using EventBridge:
+Run validation daily using EventBridge:
 
 ```bash
-# Create EventBridge rule (daily at 2 AM UTC)
 aws events put-rule \
   --name daily-data-validation \
   --schedule-expression "cron(0 2 * * ? *)"
 
-# Add Lambda target
 aws events put-targets \
   --rule daily-data-validation \
   --targets "Id"="1","Arn"="arn:aws:lambda:REGION:ACCOUNT:function:data-contract-executor","Input"='{"contract_path":"contracts/sample_contract.yaml"}'
@@ -363,10 +314,8 @@ aws events put-targets \
 ## Cleanup
 
 ```bash
-# Delete function
 aws lambda delete-function --function-name data-contract-executor
 
-# Delete IAM role and policy
 aws iam delete-role-policy \
   --role-name DataContractExecutorRole \
   --policy-name DataContractS3Access
@@ -378,8 +327,4 @@ aws iam detach-role-policy \
 aws iam delete-role --role-name DataContractExecutorRole
 ```
 
-## See Also
-
-- [QUICKSTART.md](QUICKSTART.md) - Local testing guide
-- [README.md](README.md) - Project overview
-- [examples/](examples/) - Example files
+See [QUICKSTART.md](QUICKSTART.md), [README.md](README.md), and [examples/](examples/) for more information.

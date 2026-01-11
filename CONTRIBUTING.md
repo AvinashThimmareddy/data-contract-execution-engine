@@ -232,76 +232,58 @@ pytest tests/test_pipeline_generator.py -v
 
 ## Code Standards
 
-### Style
-- Follow PEP 8
-- Use type hints for all functions
-- Document with docstrings
-- Keep functions focused and small
+Follow PEP 8 style guidelines and use type hints for all functions:
 
-### Example:
 ```python
 def validate_schema(self, df: pd.DataFrame) -> bool:
-    """
-    Validate dataframe schema against contract schema.
-    
-    Args:
-        df: pandas DataFrame to validate
-        
-    Returns:
-        True if schema is valid, False otherwise
-    """
+    """Validate dataframe schema against contract schema."""
     # Implementation
     pass
 ```
 
-### Testing
-- Write unit tests for new functionality
-- Test with both valid and invalid inputs
-- Mock external dependencies (S3, databases)
+Write unit tests for new functionality with both valid and invalid inputs.
+
+## Testing
+
+Run the test suite locally:
+```bash
+pytest tests/test_contract_parser.py -v
+pytest tests/test_validation_engine.py -v
+pytest tests/test_sla_enforcer.py -v
+pytest tests/test_pipeline_generator.py -v
+```
+
+After deploying to Lambda, invoke with test data and check CloudWatch logs.
 
 ## Common Tasks
 
-### Debug Pipeline Issues
+Debug pipeline issues with logging:
 ```python
-# Add temporary logging
 import logging
 logger = logging.getLogger(__name__)
-
 logger.info(f"DataFrame shape: {df.shape}")
-logger.info(f"Row count: {len(df)}")
 logger.info(f"Sample data:\n{df.head()}")
 ```
 
-### Profile Performance
+Handle large files with chunking:
 ```python
-import time
-start = time.time()
-results = pipeline.generate(df)
-duration = time.time() - start
-print(f"Validation took {duration:.2f} seconds")
-```
-
-### Handle Large Files
-```python
-# Use pandas chunking for large CSVs
 chunk_size = 100000
 for chunk in pd.read_csv("data.csv", chunksize=chunk_size):
     results = pipeline.generate(chunk)
-    # Process results
 ```
 
 ## Deployment Checklist
 
-- [ ] Code follows PEP 8 style guide
-- [ ] All functions have type hints
-- [ ] Unit tests written and passing
-- [ ] Lambda deployment tested
-- [ ] Documentation updated
-- [ ] CHANGELOG.md entry added
-- [ ] No hardcoded credentials or secrets
-- [ ] Error handling implemented
-- [ ] Logging statements added
-- [ ] Performance optimized for Lambda constraints
+- Code follows PEP 8 style guide
+- All functions have type hints
+- Unit tests written and passing
+- Lambda deployment tested
+- Documentation updated
+- CHANGELOG.md entry added
+- No hardcoded credentials or secrets
+- Error handling implemented
+- Logging statements added
+- Performance optimized for Lambda constraints
 
 ## Resources
 
@@ -312,10 +294,4 @@ for chunk in pd.read_csv("data.csv", chunksize=chunk_size):
 
 ## Getting Help
 
-- Check existing issues on GitHub
-- Review examples in `examples/` folder
-- Read docstrings in code
-- Check CloudWatch logs for errors
-- Ask in GitHub Discussions
-
-Happy coding! 🚀
+Check existing issues on GitHub, review examples in the `examples/` folder, read docstrings in the code, and check CloudWatch logs for errors.
